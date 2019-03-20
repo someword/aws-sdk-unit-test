@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -20,12 +22,12 @@ func (m *mockEC2Client) DescribeInstances(input *ec2.DescribeInstancesInput) (*e
 
 func TestGetEKSEC2InstanceHostname(t *testing.T) {
 	tests := []struct {
-		name, expected string
-		Output         *ec2.DescribeInstancesOutput
-		Input          *ec2.DescribeInstancesInput
-		Error          error
+		name     string
+		expected []string
+		Output   *ec2.DescribeInstancesOutput
+		Error    error
 	}{
-		{"test 1", "ip-1.1.1.1.us-west-2.computer.internal", &ec2.DescribeInstancesOutput{
+		{"test 1", []string{"ip-2.2.2.2.us-west-2.computer.internal", "ip-1.1.1.1.us-west-2.computer.internal"}, &ec2.DescribeInstancesOutput{
 			Reservations: []*ec2.Reservation{
 				{
 					Instances: []*ec2.Instance{
@@ -60,28 +62,17 @@ func TestGetEKSEC2InstanceHostname(t *testing.T) {
 					},
 				},
 			},
-		}, &ec2.DescribeInstancesInput{
-			Filters: []*ec2.Filter{
-				{
-					Name:   aws.String("tag:Role"),
-					Values: []*string{aws.String("Kubernetes")},
-				},
-				{
-					Name:   aws.String("instance-state-name"),
-					Values: []*string{aws.String("running")},
-				},
-			},
 		},
 			nil},
-		{"test 2", "blaj", &ec2.DescribeInstancesOutput{}, &ec2.DescribeInstancesInput{}, nil},
+		{"test 2", []string{}, &ec2.DescribeInstancesOutput{}, errors.New("No matching hosts found")},
 	}
 
 	for _, test := range tests {
 		m := &mockEC2Client{Output: test.Output}
 		c := EC2Client{svc: m}
-		actual := c.GetHost()
-		if actual != test.expected {
-			t.Errorf("GetHost(): test name: %s expected: %s actual: %s\n", test.name, test.expected, actual)
+		actual, err := c.GetHost()
+		if !reflect.DeepEqual(actual, test.expected) || !reflect.DeepEqual(err, test.Error) {
+			t.Errorf("GetHost(): test name: %s expected: %s actual: %s \n expected error: %s error: %s\n", test.name, test.expected, actual, test.Error, err)
 		}
 	}
 }
