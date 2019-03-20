@@ -17,6 +17,32 @@ type mockEC2Client struct {
 }
 
 func (m *mockEC2Client) DescribeInstances(input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
+	for r, rez := range m.Output.Reservations {
+		outputInst := []*ec2.Instance{}
+		for _, inst := range rez.Instances {
+			addInst := 0
+			for _, filter := range input.Filters {
+				switch {
+				case (*filter.Name)[:3] == "tag":
+					for _, tag := range inst.Tags {
+						//ignoring the case of multi-values filters in the tests
+						if *tag.Key == (*filter.Name)[4:] && *tag.Value == *filter.Values[0] {
+							addInst++
+						}
+					}
+				case *filter.Name == "instance-state-name":
+					if *inst.State.Name == *filter.Values[0] {
+						addInst++
+					}
+				}
+			}
+			if addInst == len(input.Filters) {
+				outputInst = append(outputInst, inst)
+			}
+		}
+		m.Output.Reservations[r].Instances = outputInst
+	}
+
 	return m.Output, m.Error
 }
 
@@ -27,7 +53,7 @@ func TestGetEKSEC2InstanceHostname(t *testing.T) {
 		Output   *ec2.DescribeInstancesOutput
 		Error    error
 	}{
-		{"test 1", []string{"ip-2.2.2.2.us-west-2.computer.internal", "ip-1.1.1.1.us-west-2.computer.internal"}, &ec2.DescribeInstancesOutput{
+		{"test 1", []string{"ip-1.1.1.1.us-west-2.computer.internal"}, &ec2.DescribeInstancesOutput{
 			Reservations: []*ec2.Reservation{
 				{
 					Instances: []*ec2.Instance{
