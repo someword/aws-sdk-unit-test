@@ -22,6 +22,7 @@ func TestGetEKSEC2InstanceHostname(t *testing.T) {
 	tests := []struct {
 		name, expected string
 		Output         *ec2.DescribeInstancesOutput
+		Input          *ec2.DescribeInstancesInput
 		Error          error
 	}{
 		{"test 1", "ip-1.1.1.1.us-west-2.computer.internal", &ec2.DescribeInstancesOutput{
@@ -59,8 +60,20 @@ func TestGetEKSEC2InstanceHostname(t *testing.T) {
 					},
 				},
 			},
-		}, nil},
-		{"test 2", "blaj", &ec2.DescribeInstancesOutput{}, nil},
+		}, &ec2.DescribeInstancesInput{
+			Filters: []*ec2.Filter{
+				{
+					Name:   aws.String("tag:Role"),
+					Values: []*string{aws.String("Kubernetes")},
+				},
+				{
+					Name:   aws.String("instance-state-name"),
+					Values: []*string{aws.String("running")},
+				},
+			},
+		},
+			nil},
+		{"test 2", "blaj", &ec2.DescribeInstancesOutput{}, &ec2.DescribeInstancesInput{}, nil},
 	}
 
 	for _, test := range tests {
