@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,8 +15,6 @@ type mockEC2Client struct {
 }
 
 func (m *mockEC2Client) DescribeInstances(input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
-	fmt.Println("I AM IN THE DI")
-	fmt.Println(input)
 	return m.Output, m.Error
 }
 
