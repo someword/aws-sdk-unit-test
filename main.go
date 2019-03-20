@@ -31,7 +31,7 @@ func NewEC2Client(profile, region string) *EC2Client {
 }
 
 // GetHost blah blah
-func (e *EC2Client) GetHost() string {
+func (e *EC2Client) GetHost() ([]string, error) {
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			{
@@ -51,13 +51,17 @@ func (e *EC2Client) GetHost() string {
 	}
 
 	results := []*ec2.Instance{}
+	dnsRes := []string{}
 	for _, reservation := range instances.Reservations {
 		results = append(results, reservation.Instances...)
+		for _, res := range reservation.Instances {
+			dnsRes = append(dnsRes, *res.NetworkInterfaces[0].PrivateDnsName)
+		}
 	}
 	if len(results) == 0 {
-		return "No matching hosts found"
+		return dnsRes, fmt.Errorf("No matching hosts found")
 	}
-	return *results[0].NetworkInterfaces[0].PrivateDnsName
+	return dnsRes, nil
 }
 
 func main() {
