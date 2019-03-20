@@ -45,6 +45,7 @@ func (e *EC2Client) GetHost() string {
 		},
 	}
 	instances, err := e.svc.DescribeInstances(params)
+	fmt.Printf("instances are %#v\n", instances)
 
 	if err != nil {
 		log.Fatalf("Error is %s\n", err)

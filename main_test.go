@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,6 +16,8 @@ type mockEC2Client struct {
 }
 
 func (m *mockEC2Client) DescribeInstances(input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
+	fmt.Println("I AM IN THE DI")
+	fmt.Println(input)
 	return m.Output, m.Error
 }
 
@@ -46,8 +49,8 @@ func TestGetEKSEC2InstanceHostname(t *testing.T) {
 							State: &ec2.InstanceState{Name: aws.String(ec2.InstanceStateNameRunning)},
 							Tags: []*ec2.Tag{
 								{
-									Key:   aws.String("Service"),
-									Value: aws.String("whizbang"),
+									Key:   aws.String("Role"),
+									Value: aws.String("Kubernetes"),
 								},
 								{
 									Key:   aws.String("Team"),
